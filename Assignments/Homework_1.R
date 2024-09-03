@@ -2,8 +2,9 @@ rm(list = ls())
 
 library(tidyverse)
 library(ggpubr)
-setwd("C:/Users/Ethan/OneDrive/Documents/BIOE8510/Assignments")
+setwd("C:/Users/Ethan/OneDrive/Documents/BIOE8510/RSudio/Assignments")
 
+#-------------PART 1----------------#
 ####Problem 1
 #A: [Enter description here]
 help("sort")
@@ -85,3 +86,63 @@ exp1_70=(subset(mydf, (expnum==1 & time==70)))$response
 exp3_70=(subset(mydf, (expnum==3 & time==70)))$response
 diff=(exp1_70-exp3_70)
 
+####Problem 4
+#A
+Loblolly
+#B
+head(Loblolly)
+#C
+unique_seed_sources=length(unique(Loblolly$Seed))
+#D (note: there was a strange issue with the factor being preserved. Therefore, I converted the value into a numeric)
+age_10=subset(Loblolly, age==10)
+row = age_10[which.min(age_10$height),]
+seed_10=as.numeric(as.character(row$Seed))
+#E
+S301 = subset(Loblolly, Seed==301 )
+#F
+S323 = subset(Loblolly, Seed==323 )
+#G
+LoblollySmall = rbind(S301,S323)
+
+#-------------PART 2----------------#
+# Notes: Use ggplot for creating plots
+# For saving images, click export over the plot in the plot window
+# ggarrage(plot1, plot2) will combine two plots (from the gg package)
+
+#A  
+# Is it easy to see trends in the data that might help you distinguish
+# carcinoma from other types?
+
+bc = read.csv("breastcancer.csv")
+
+#B
+s1=ggplot() + geom_point(data=bc,mapping=aes(x=PA500, y=I0))
+#C
+s1=ggplot() + geom_point(data=bc,mapping=aes(x=PA500, y=I0, color=Class))
+#D
+s1=ggplot() + geom_point(data=bc,mapping=aes(x=PA500, y=I0, color=Class, size=PA500))
+# Entries with higher I0 tend to have a smaller PA500 value.
+# The class adi and the class con have a much higher I0 value.
+# Class car had the greatest values for PA500 and a similar I0 value compared to classes excluding adi and con
+
+#E
+# Repeating step D:
+#x=HFS, y = I0
+s2=ggplot() + geom_point(data=bc,mapping=aes(x=HFS, y=I0, color=Class))
+#x=DA, y = I0 ; No interesting trends 
+s3=ggplot() + geom_point(data=bc,mapping=aes(x=DA, y=I0, color=Class))
+# when comparing DA to I0, the resulting graph separated each class into their
+# own regions on the scatterplot based on I0. 
+# class adi had the greatest values for I0 and the greatest spread for DA.
+# mas, gla, and car all have similar values for da and I0.
+s4=ggplot() + geom_point(data=bc,mapping=aes(x=I0, y=Max.IP, color=Class))
+# Trend: I0 and Max.IP are proportional 
+
+# Feature Classification
+#A
+s5=ggplot() + geom_point(data=bc,mapping=aes(x=PA500, y=I0, color=Class))
+# Using the plot s5, its safe to assume that a
+# class with a PA500 value >= 0.2 is carninoma.
+# Classes below 0.2 PA500 value are non-carcinoma.
+
+#B 
