@@ -146,3 +146,20 @@ s5=ggplot() + geom_point(data=bc,mapping=aes(x=PA500, y=I0, color=Class))
 # Classes below 0.2 PA500 value are non-carcinoma.
 
 #B 
+false_pos=subset(bc,(Class!="car" & PA500>=0.2))
+nrow(false_pos)
+
+#C
+false_neg=subset(bc,(Class=="car" & PA500<0.2))
+nrow(false_neg)
+
+#D
+# Its better to minimize both false positives and false negatives (in a perfect world).
+# Between the two, a false positive is better because receiving treatment for something thats 
+# not their is better than receiving no treatment for something that it there.
+# That said, treatments for false positives result in unneeded stress, money, time spent, and resources spent.
+# Too many false negatives means that the metric used to 'cutoff' is not accurate enough.
+# This results in a higher number of people going untreated for something that is there. 
+# Therefore, based on the results I obtained, the cutoff should be moved slightly lower than 0.2.
+# This will reduce the number false negatives and slightly increase the number of false positives.
+
