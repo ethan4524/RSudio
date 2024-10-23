@@ -1,0 +1,193 @@
+#Load packages
+library(lattice)
+library(ggplot2)
+library(deSolve)
+
+########################################### Visualize Theoph Data #####################
+
+ggplot(Theoph) + geom_path(aes(x=Time, y = conc, color = Dose, group = Subject))
+ggplot(Theoph) + geom_path(aes(x=Time, y = conc, color = factor(Dose))) + facet_wrap(~Subject)
+
+
+########################################### Define 1 compartment PK Model with oral dosing #####################
+
+#Specify deSolve Model
+model <- function(time, inits, theta) {
+  #Inputs:
+  #time: vector of times to be included in output
+  #y --> list of initial conditions
+  #parms --> list of model parameters
+   
+  with(as.list(c(inits,theta)), {  #"with" get the named contents of y and theta and lets them be used inside the {}  
+
+    #Model equation
+    dA_depot = -Ka*A_depot
+    dC1 <- Ka*A_depot/V1 - Ke*C1 
+    
+    #return list of derivatives
+    list( c(dA_depot, dC1))
+  })
+}
+
+
+
+########################################### Simulation #####################
+Theoph_1 = filter(Theoph,Subject==1)
+
+#Note that in Theophylline dataset, Dose column is given as mg/kg. Total dose is Dose*Wt
+#Calculate a representative dose to use while exploring:
+Dose = Theoph_1$Dose[1]*Theoph_1$Wt[1]
+
+
+#Set initial conditions
+#IMPORTANT: the variable in your initial condition list must have exactly the same name as the variable in your model
+inits <- c(A_depot = Dose, #the amount in our depot compartment a time zero is the dose for oral dosing
+           C1 =   0 )    
+
+#Make a named list of model parameters
+theta <- c(Ka = 1,   #mg/hr
+           V1 = 20,   #L
+           Ke= 0.1 )  #/hr  #list of parameters
+
+#Simulation time
+tlast = 24 ; 
+times <- seq(0, tlast, 0.01)
+
+#Simulate
+X <- ode(inits, times, model, theta)
+
+#convert results to a dataframe to make plotting easier
+X = data.frame(X)
+
+#Plot simulation on top of Theophylline data:
+#note
+
+ggplot(X) + geom_path(data=X, aes(x=time, y = C1, color = 'Sim')) +
+  geom_point(data=Theoph_1,aes(x=Time,y=conc,color='Data'))
+
+#Replot on log scale
+
+
+
+##################################### Manually fit and plot again
+
+
+#Manually change these parameters and re-run.
+theta <- c(Ka = 1,   #mg/hr
+           V1 = 20,   #L
+           Ke= 0.1 )  #/hr  #list of parameters
+
+#Simulate
+X <- data.frame(ode(inits, times, model, theta))
+
+
+
+#Let's consider only one subject for now
+S1 = filter(Theoph, Subject == 1)
+
+#Plot simulation on top of Theophylline data:
+ggplot() + geom_path(data = X, mapping = aes(x=time, y = C1, color = "Sim")) + 
+  xlab("time") + ylab("C1") + 
+  geom_point(data = S1, mapping = aes(x=Time, y = conc, color = "S1"))
+
+
+#Plot on log scale
+
+
+################################### Parameter Optimization ##################################
+
+
+#Write objective function
+obj = function(theta) {
+  
+  #To make calculation of SSE easier, simulate only at times that match the times at which data is available
+  times <- Theoph_1$Time
+  
+  #Simulate
+  X <- data.frame(ode(inits, times, model, theta))
+  
+  #compute objective function
+  sse = sum((X$C1 - Theoph_1$conc)^2) / nrow(Theoph_1)
+  
+  print(sse)
+  return(sse)
+  
+}
+
+#list of parameters = Theta
+
+theta_low = c(Ka=0,V1=0.1,Ke=0)
+theta_high = c(Ka=1000,V1=1000,Ke=1000)
+
+fit = optim(theta, obj, method="L-BFGS-B",lower=theta_low,upper=theta_high, hessian=T)
+
+#FINAL PARAMETER ESTIMATION :
+covmat = solve(fit$hessian)
+sterror=sqrt(diag(covmat))
+pctSE = 100*sterror / fit$par
+
+#NOTE: Always calculate percent standard error and round the parameters
+
+
+#################### Evaluate Fit #######################################
+
+
+theta = fit$par 
+
+#Simulation time
+tlast = 24 ; 
+times <- seq(0, tlast, 0.01)
+
+#Simulate
+X <- ode(inits, times, model, theta)
+
+#convert results to a dataframe to make plotting easier
+X = data.frame(X)
+
+#Plot simulation on top of Theophylline data:
+#note
+
+ggplot(X) + geom_path(data=X, aes(x=time, y = C1, color = 'Sim')) +
+  geom_point(data=Theoph_1,aes(x=Time,y=conc,color='Data'))
+
+
+#Inspect RSEs. Note any that are very large, or extremely small
+
+#################### Simulate again #######################################
+
+#Simulation time
+times <- Theoph_1$Time
+
+#Simulate
+X <- ode(inits, times, model, theta)
+
+#convert results to a dataframe to make plotting easier
+X = data.frame(X)
+
+#Plot simulation on top of Theophylline data:
+#note
+
+#Residuals vs time
+Theoph_1$Residuals = Theoph_1$conc - X$C1 
+
+ggplot(X) + geom_path(data=X, aes(x=Time, y = Residuals, color = 'Sim')) +
+  geom_hline(yintercept=0, color="gray", linetype="dashed")
+
+
+#Observed vs Predicted
+
+Theoph_1$conc_mod = X$C1  
+
+ggplot(Theoph_1) + geom_point(aes(x=conc, y=conc_mod)) + 
+  geom_abline(intercept = 0,slope=1,color="gray",linetype="dashed", linewidth = 1) +
+  theme_bw()
+
+
+
+
+
+
+
+
+
+
