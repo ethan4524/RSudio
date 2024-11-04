@@ -2,13 +2,15 @@ rm(list = ls())
 
 library(tidyverse)
 library(ggpubr)
-setwd("C:/Users/Ethan/OneDrive/Documents/BIOE8510/RSudio/Assignments")
+print("Be sure to change the working directory...")
+working_dir = "C:/Users/Ethan/Documents/BIOE8510/RSudio/Assignments"
+setwd(working_dir)
 
-#-------------PART 1----------------#
+#-----------------------------PART 1--------------------------------#
 ####Problem 1
-#A: [Enter description here]
+#A: Sorts a vector into ascending or descending order
 help("sort")
-#B: [Enter description here]
+#B: Random generation for the normal distribution with options for standard deviation and desired mean.
 help("rnorm")
 #C:
 myRandomNums=rnorm(100,mean=50,sd=25)
@@ -104,7 +106,7 @@ S323 = subset(Loblolly, Seed==323 )
 #G
 LoblollySmall = rbind(S301,S323)
 
-#-------------PART 2----------------#
+#-----------------------------PART 2--------------------------------#
 # Notes: Use ggplot for creating plots
 # For saving images, click export over the plot in the plot window
 # ggarrage(plot1, plot2) will combine two plots (from the gg package)
@@ -142,7 +144,7 @@ s4=ggplot() + geom_point(data=bc,mapping=aes(x=I0, y=Max.IP, color=Class))
 #A
 s5=ggplot() + geom_point(data=bc,mapping=aes(x=PA500, y=I0, color=Class))
 # Using the plot s5, its safe to assume that a
-# class with a PA500 value >= 0.2 is carninoma.
+# class with a PA500 value >= 0.2 is carcinoma.
 # Classes below 0.2 PA500 value are non-carcinoma.
 
 #B 
@@ -163,3 +165,4 @@ nrow(false_neg)
 # Therefore, based on the results I obtained, the cutoff should be moved slightly lower than 0.2.
 # This will reduce the number false negatives and slightly increase the number of false positives.
 
+# NOTE: I skipped the bonus RC Curve section...

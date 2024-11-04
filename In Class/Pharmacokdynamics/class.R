@@ -3,7 +3,8 @@ library(lattice)
 library(ggplot2)
 library(deSolve)
 
-setwd("C:/Users/ethan/OneDrive/Documents/RStudio/RSudio/In Class/Pharmacokdynamics")
+#setwd("C:/Users/ethan/OneDrive/Documents/RStudio/RSudio/In Class/Pharmacokdynamics")
+setwd("C:/Users/Ethan/Documents/BIOE8510/RSudio/In Class/Pharmacokdynamics")
 
 HR = read.csv("Theoph_PD_HR.csv")
 
