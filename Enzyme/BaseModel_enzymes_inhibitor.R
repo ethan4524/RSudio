@@ -17,8 +17,8 @@ model <- function(time, inits, theta) {
     
     #assume S >> ES,  S << Km,   S ~ St
     #compare a fresh file to this to find what we did in class
-    ES = Et*St/(Km *(1 + Ie/Kie) + St)  #<--- This could be wrong but 99% sure not
-    
+    ES = Et * St / (Km * (1 + Ie / Kie) + St)
+
     E = Et - ES
     
     S = St - ES

@@ -1,7 +1,7 @@
 #Load packages
 library(tidyverse)
 library(deSolve)
-library(ggpubr)
+#library(ggpubr)
 
 
 #Specify deSolve Model
@@ -14,8 +14,7 @@ model <- function(time, inits, theta) {
   with(as.list(c(inits,theta)), {  #"with" get the named contents of y and theta and lets them be used inside the {}  
     
     #assume S >> ES,  S << Km,   S ~ St
-    #compare a fresh file to this to find what we did in class
-    ES = Et*St/(Km + St)
+    ES = Et*St/(Km*(1 + Ie/Kie) + St)
     
     E = Et - ES
     
@@ -25,7 +24,7 @@ model <- function(time, inits, theta) {
     
     dSt = Prods - Kdegs*S - Kcat*ES
     
-    dP = Kcat*ES - Kdegp * P
+    dP = Kcat*ES - Kdegp*P
     
     #return list of derivatives
     list( c(dEt,dSt,dP))
@@ -37,7 +36,8 @@ model <- function(time, inits, theta) {
 Km = 0.75*1000 #pM
 Kcat = 1 #/sec
 Kdege = 1 #/sec
-Kdegs = 0 #/sec (the substrate can only be eliminated by converting into product)
+Kdegs = 1 #/sec
+
 
 
 #Concentrations measured at steady state
@@ -54,11 +54,11 @@ Etot_ss = 1 #pmol/L
   E_ss = Etot_ss - ES_ss
 
 #Calculated production and elimination rates 
-Prode = Kdege*E_ss    #Must equal free-enzyme elimination rate
+Prode = Kdege*E_ss     #Must equal free-enzyme elimination rate
 Prods = Kdegs*Sss + Kcat*ES_ss  #Must equal free enzyme elimination rate + productformation rate
-Kdegp = Kcat*ES_ss / Pss  #Calculate from steady-state condition for Product
+Kdegp = Kcat*ES_ss/Pss  #Calculate from steady-state condition for Product
 
-#####################################
+#####################################3
 inits = c(Et = Etot_ss,
           St = Sss  + ES_ss,
           P = Pss)
@@ -69,11 +69,14 @@ theta = c(Km = Km,
           Kdegs = Kdegs,
           Prode = Prode,
           Prods = Prods,
-          Kdegp = Kdegp)
+          Kdegp = Kdegp,
+          Kie = 100, #pM
+          Ie = 900
+          )
 
 
 #Simulation time
-tlast = 60*60*24*28 ; 
+tlast = 30*60*24 ; 
 times <- seq(0, tlast, 60)
 
 #Simulate
