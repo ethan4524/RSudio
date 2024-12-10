@@ -18,7 +18,7 @@ model <- function(time, inits, theta) {
     S = St - ES
     
     # Fraction bound
-    fb = P / (Kd + P)
+    fb = P / (P+Kd*(1+(Ifixaprob / Kie_fixaprob)))
     
     # Product-receptor complex
     PR = Et * P / (Kd + P)

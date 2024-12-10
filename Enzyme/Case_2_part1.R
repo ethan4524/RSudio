@@ -10,26 +10,20 @@ model <- function(time, inits, theta) {
   with(as.list(c(inits, theta)), {
     
     # Enzyme-substrate complex with Fixaprob and Blocextra as competitive inhibitors
-    ES = Et * St / ((Km * (1 + (Ifixaprob / Kie_fixaprob) + (Iblocextra / Kie_blocextra))) + St)
+    ES = Et * St / ((Km * (1 + (Iblocextra / Kie_blocextra))) + St)
     
     # Free enzyme
     E = Et - ES
     
     # Free substrate
-    S = St - ES
+    #S = St - ES
     
     # Fraction bound
-    fb = P / (Kd + P)
-    
-    # Product-receptor complex
-    PR = Et * P / (Kd + P)
-    
-    # Feedback term
-    feedback = (PR_ss / PR)^n
+    fb = P / (P+Kd*(1+(Ifixaprob / Kie_fixaprob)))
     
     # Differential equations
-    dEt = (Prode * feedback) - Kdege * E
-    dSt = Prods - Kdegs * S - Kcat * ES
+    dEt = (Prode *  (fbss/fb)^n)- Kdege*E
+    dSt = Prods - Kdegs * St - Kcat * ES
     dP = Kcat * ES - Kdegp * P
     
     # Return list of derivatives
@@ -63,7 +57,6 @@ Kdegp = Kcat * ES_ss / Pss  # Calculate from steady-state condition for Product
 
 fbss = Pss / (Pss + Kd)
 
-PR_ss = (Etot_ss * Pss) / (Kd + Pss)
 
 # Initial conditions
 inits = c(Et = Etot_ss,
@@ -81,11 +74,12 @@ theta <- c(
   Kdegp = Kdegp,
   Kie_fixaprob = 10,  # pM (Fixaprob binding affinity)
   Kie_blocextra = 1,  # pM (Blocextra binding affinity)
-  Ifixaprob = 0,       # Initial Fixaprob concentration
+  Ifixaprob = 60,       # Initial Fixaprob concentration
   Iblocextra = 0,      # Initial Blocextra concentration
   Pss = Pss,
-  n = 3,               # Feedback exponent
-  Kd = Kd
+  n = 4.4,               # Feedback exponent
+  Kd = Kd,
+  fbss = fbss
 )
 
 # Simulation time (3 days in seconds)
@@ -109,10 +103,52 @@ X_long <- X %>%
 ggplot(X_long, aes(x = time, y = Value)) +
   geom_line(color = "steelblue", size = 1) +
   facet_wrap(~ Variable, scales = "free_y") +
-  labs(x = "Time (minutes)", y = "Concentration", title = "Simulation of Et, St, P, and Fraction Bound") +
+  labs(x = "Time (seconds)", y = "Concentration", title = "Simulation of Et, St, P, and Fraction Bound") +
   theme_minimal()
 
 
 
-#=============================PART C==================================
+#=======================Part A================================
 
+# Function to calculate fraction bound and enzyme concentration
+calculate_fraction_bound <- function(fixaprob_concentration) {
+  # Update Ifixaprob value in the theta list
+  theta["Ifixaprob"] <- fixaprob_concentration
+  # Simulate the model
+  X <- data.frame(ode(inits, times, model, theta))
+  
+  # Calculate fraction bound
+  X$fb <- X$P / (X$P+theta["Kd"]*(1+(theta["Ifixaprob"] / theta["Kie_fixaprob"])))
+  
+  # Get final fraction bound value (last time point)
+  final_fb <- tail(X$fb, n = 1)
+  
+  # Get final Enzyme concentration value (last time point)
+  final_Et <- tail(X$Et, n = 1)
+  print(X$Et)
+  # Return as a data frame row
+  print(data.frame(fixaprob_concentration, final_fb, final_Et))
+  return(data.frame(fixaprob_concentration, final_fb, final_Et))
+}
+
+# Create a sequence of Fixaprob concentrations to test
+fixaprob_concentrations <- seq(0, 1000, by = 5)
+
+#runs the function above with the list of fixaprob concentrations as inputs
+results_list <- lapply(fixaprob_concentrations, calculate_fraction_bound)
+#store results in dataframe
+results <- bind_rows(results_list)
+
+# Print the results
+print(results)
+
+# Plot
+ggplot(results, aes(x = final_fb, y = final_Et)) +
+  geom_line(color = "purple", size = 1) +
+  geom_point(color = "purple", size = 2) +
+  labs(
+    x = "Final Fraction Bound (Fb)",
+    y = "Final Enzyme Concentration (Et)",
+    title = "Enzyme Concentration vs Fraction Bound"
+  ) +
+  theme_minimal()
